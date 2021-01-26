@@ -5,9 +5,10 @@ import os.path
 import torch
 import numpy as np
 import sys
-from tqdm import tqdm 
+from tqdm import tqdm
 import json
-from plyfile import PlyData, PlyElement
+
+from .process_off_file import read_off
 
 def get_segmentation_classes(root):
     catfile = os.path.join(root, 'synsetoffset2category.txt')
@@ -167,11 +168,11 @@ class ModelNetDataset(data.Dataset):
     def __getitem__(self, index):
         fn = self.fns[index]
         cls = self.cat[fn.split('/')[0]]
-        with open(os.path.join(self.root, fn), 'rb') as f:
-            plydata = PlyData.read(f)
-        pts = np.vstack([plydata['vertex']['x'], plydata['vertex']['y'], plydata['vertex']['z']]).T
-        choice = np.random.choice(len(pts), self.npoints, replace=True)
-        point_set = pts[choice, :]
+
+        # read off file
+        vertices, faces = read_off(input_off_file=os.path.join(self.root, fn))
+        choice = np.random.choice(vertices.shape[0], self.npoints, replace=True)
+        point_set = vertices[choice, :]
 
         point_set = point_set - np.expand_dims(np.mean(point_set, axis=0), 0)  # center
         dist = np.max(np.sqrt(np.sum(point_set ** 2, axis=1)), 0)
