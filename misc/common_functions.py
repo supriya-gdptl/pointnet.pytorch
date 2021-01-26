@@ -14,14 +14,14 @@ def replace_file_extension(input_file):
     path = Path(input_file)
     text = path.read_text()
     if ".ply" in text:
-        text.replace(".ply", ".off")
+        text = text.replace(".ply", ".off")
         # write in the same file
         path.write_text(text)
         print(f"Extension .ply replaced with .off in file {input_file}")
 
 
 if __name__ == '__main__':
-    dataset_folder = sys.argv[1]
+    dataset_folder = "../../../../modelnet40/ModelNet40"#sys.argv[1]
     replace_file_extension(os.path.join(dataset_folder, 'train.txt'))
     replace_file_extension(os.path.join(dataset_folder, 'val.txt'))
     replace_file_extension(os.path.join(dataset_folder, 'test.txt'))
