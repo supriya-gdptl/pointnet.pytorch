@@ -1,14 +1,17 @@
 from __future__ import print_function
-import torch.utils.data as data
+
+import json
 import os
 import os.path
-import torch
-import numpy as np
 import sys
-from tqdm import tqdm
-import json
 
-from .process_off_file import read_off
+import numpy as np
+import torch
+import torch.utils.data as data
+from tqdm import tqdm
+
+from misc.process_off_file import read_off
+
 
 def get_segmentation_classes(root):
     catfile = os.path.join(root, 'synsetoffset2category.txt')

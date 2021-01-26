@@ -30,6 +30,8 @@ parser.add_argument('--feature_transform', action='store_true', help="use featur
 opt = parser.parse_args()
 print(opt)
 
+# run misc/common_functions.py to replace model file extensions from .ply to .off in {train/val/test/trainval}.txt
+
 blue = lambda x: '\033[94m' + x + '\033[0m'
 
 opt.manualSeed = random.randint(1, 10000)  # fix seed
