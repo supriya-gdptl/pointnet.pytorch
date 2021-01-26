@@ -32,6 +32,9 @@ if __name__ == '__main__':
 
     opt = parser.parse_args()
 
+    # create output folder if it does not exists
+    os.makedirs(opt.outf)
+
     # log
     logtime = time.strftime("%d_%m_%Y_%H_%M_%S")
     logfile = open(os.path.join(opt.outf, f'log_{logtime}.txt'), 'w')
@@ -90,11 +93,6 @@ if __name__ == '__main__':
               msg=f"number of training examples: {len(dataset)}\nnumber of test example: {len(test_dataset)}")
     num_classes = len(dataset.classes)
     write_log(logfile=logfile,msg=f'number of classes {num_classes}')
-
-    try:
-        os.makedirs(opt.outf)
-    except OSError:
-        pass
 
     classifier = PointNetCls(k=num_classes, feature_transform=opt.feature_transform)
 
