@@ -175,7 +175,9 @@ class ModelNetDataset(data.Dataset):
         # read off file
         vertices, faces = read_off(input_off_file=os.path.join(self.root, fn))
         choice = np.random.choice(vertices.shape[0], self.npoints, replace=True)
+        # shuffle data and label
         point_set = vertices[choice, :]
+        cls = cls[choice]
 
         point_set = point_set - np.expand_dims(np.mean(point_set, axis=0), 0)  # center
         dist = np.max(np.sqrt(np.sum(point_set ** 2, axis=1)), 0)
