@@ -178,8 +178,8 @@ class ModelNetDataset(data.Dataset):
 
         # read off file
         vertices, faces = read_off(input_off_file=os.path.join(self.root, fn))
+        # randomly select self.npoints{1024/2048/2500} points from vertices
         choice = np.random.choice(vertices.shape[0], self.npoints, replace=True)
-        # shuffle points within one point cloud
         point_set = vertices[choice, :]
 
         point_set = point_set - np.expand_dims(np.mean(point_set, axis=0), 0)  # center
@@ -224,9 +224,10 @@ class HDF5_ModelNetDataset(data.Dataset):
         self.labels = np.empty((0,1), dtype='uint8')
 
         for h5file in self.h5files:
-            f = h5py.File(os.path.join(root, f"{h5file}"))
-            self.point_cloud_data = np.append(self.point_cloud_data, f['data'][:, self.npoints, :], axis=0)
-            self.labels = np.append(self.labels, f['label'], axis=0)
+            fl = h5py.File(os.path.join(root, f"{h5file}"))
+            print(f"pcd:{self.point_cloud_data.shape}, data:{fl['data'][:,0:self.npoints, :].shape}")
+            self.point_cloud_data = np.append(self.point_cloud_data, fl['data'][:, 0:self.npoints, :], axis=0)
+            self.labels = np.append(self.labels, fl['label'], axis=0)
 
         self.cat = {}
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../misc/modelnet_id.txt'), 'r') as f:
@@ -256,7 +257,7 @@ class HDF5_ModelNetDataset(data.Dataset):
             point_set += np.random.normal(0, 0.02, size=point_set.shape)  # random jitter
 
         point_set = torch.from_numpy(point_set.astype(np.float32))
-        cls = torch.from_numpy(np.array([cls]).astype(np.int64))
+        cls = torch.from_numpy(cls.astype(np.int64))
         return point_set, cls
 
     def __len__(self):

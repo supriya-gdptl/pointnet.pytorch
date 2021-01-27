@@ -19,7 +19,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--batchSize', type=int, default=32, help='input batch size')
     parser.add_argument(
-        '--num_points', type=int, default=2500, help='input batch size')
+        '--num_points', type=int, default=2500, help='number of points in point cloud')
     parser.add_argument(
         '--workers', type=int, help='number of data loading workers', default=4)
     parser.add_argument(
@@ -33,7 +33,7 @@ if __name__ == '__main__':
     opt = parser.parse_args()
 
     # create output folder if it does not exists
-    os.makedirs(opt.outf)
+    os.makedirs(opt.outf, exist_ok=True)
 
     # log
     logtime = time.strftime("%d_%m_%Y_%H_%M_%S")
