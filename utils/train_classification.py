@@ -5,7 +5,7 @@ import random
 import time
 import torch.optim as optim
 import torch.utils.data
-from pointnet.dataset import ShapeNetDataset, ModelNetDataset
+from pointnet.dataset import ShapeNetDataset, ModelNetDataset, HDF5_ModelNetDataset
 from pointnet.model import PointNetCls, feature_transform_regularizer
 import torch.nn.functional as F
 from tqdm import tqdm
@@ -70,6 +70,17 @@ if __name__ == '__main__':
             split='trainval')
 
         test_dataset = ModelNetDataset(
+            root=opt.dataset,
+            split='test',
+            npoints=opt.num_points,
+            data_augmentation=False)
+    elif opt.dataset_type == 'hdf5_modelnet40':
+        dataset = HDF5_ModelNetDataset(
+            root=opt.dataset,
+            npoints=opt.num_points,
+            split='train')
+
+        test_dataset = HDF5_ModelNetDataset(
             root=opt.dataset,
             split='test',
             npoints=opt.num_points,
