@@ -4,38 +4,40 @@ import torch
 import torch.nn.parallel
 import torch.utils.data
 from torch.autograd import Variable
-from pointnet.dataset import ShapeNetDataset
+from pointnet.dataset import HDF5_ModelNetDataset
 from pointnet.model import PointNetCls
 import torch.nn.functional as F
 
 
-#showpoints(np.random.randn(2500,3), c1 = np.random.uniform(0,1,size = (2500)))
-
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--model', type=str, default = '',  help='model path')
-parser.add_argument('--num_points', type=int, default=2500, help='input batch size')
+parser.add_argument('--feature_transform', action='store_true', help='feature transform')
+parser.add_argument('--num_points', type=int, default=1024, help='input batch size')
+parser.add_argument('--dataset', type=str, default='', help='dataset path')
 
 
 opt = parser.parse_args()
 print(opt)
 
-test_dataset = ShapeNetDataset(
-    root='shapenetcore_partanno_segmentation_benchmark_v0',
-    split='test',
-    classification=True,
-    npoints=opt.num_points,
-    data_augmentation=False)
+test_dataset = HDF5_ModelNetDataset(
+            root=opt.dataset,
+            split='test',
+            npoints=opt.num_points,
+            data_augmentation=False)
+print('number of test examples:',len(test_dataset))
 
 testdataloader = torch.utils.data.DataLoader(
-    test_dataset, batch_size=32, shuffle=True)
+    test_dataset, batch_size=1, shuffle=True)
 
-classifier = PointNetCls(k=len(test_dataset.classes))
+classifier = PointNetCls(k=len(test_dataset.classes), feature_transform=opt.feature_transform)
 classifier.cuda()
 classifier.load_state_dict(torch.load(opt.model))
 classifier.eval()
 
-
+class_id2name = {test_dataset.cat[key]:key for key in list(test_dataset.cat.keys())}
+failure_cases = dict()
+count = 0
 for i, data in enumerate(testdataloader, 0):
     points, target = data
     points, target = Variable(points), Variable(target[:, 0])
@@ -46,4 +48,20 @@ for i, data in enumerate(testdataloader, 0):
 
     pred_choice = pred.data.max(1)[1]
     correct = pred_choice.eq(target.data).cpu().sum()
-    print('i:%d  loss: %f accuracy: %f' % (i, loss.data.item(), correct / float(32)))
+    target = target.item()
+    pred_choice = pred_choice.item()
+    if correct.item() == 0:
+    	label_target = class_id2name[target]
+    	if label_target not in failure_cases:
+    		failure_cases[label_target] = []
+    	failure_cases[label_target].append("{}_labelid_{}_name_{}".format(i, pred_choice, class_id2name[pred_choice]))
+    	count += 1
+    	print('example {}: accuracy: {}, target: {}-{}, predicted: {}-{}'.format(i, correct,
+                                                                                 target, label_target,
+                                                                                 pred_choice, class_id2name[pred_choice]))
+print("*"*50)
+print("Number of failure cases:{}/{}".format(count, len(test_dataset)))
+for k in failure_cases:
+	print(k+":")
+	print(", ".join(failure_cases[k]))
+	print()
