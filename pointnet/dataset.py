@@ -194,7 +194,7 @@ class ModelNetDataset(data.Dataset):
 
         point_set = torch.from_numpy(point_set.astype(np.float32))
         cls = torch.from_numpy(np.array([cls]).astype(np.int64))
-        return point_set, cls
+        return point_set, cls, fn
 
 
     def __len__(self):
@@ -222,12 +222,19 @@ class HDF5_ModelNetDataset(data.Dataset):
 
         self.point_cloud_data = np.empty((0, self.npoints, 3))
         self.labels = np.empty((0,1), dtype='uint8')
+        self.filenames = []
 
-        for h5file in self.h5files:
+        for idx, h5file in enumerate(self.h5files):
             fl = h5py.File(os.path.join(root, f"{h5file}"))
             print(f"pcd:{self.point_cloud_data.shape}, data:{fl['data'][:,0:self.npoints, :].shape}")
             self.point_cloud_data = np.append(self.point_cloud_data, fl['data'][:, 0:self.npoints, :], axis=0)
             self.labels = np.append(self.labels, fl['label'], axis=0)
+            # read json file to get filename
+            with open(os.path.join(root,f"data/modelnet40_ply_hdf5_2048/ply_data_{self.split}_{idx}_id2file.json")) as jsonfile:
+                jsonlist = json.load(jsonfile)
+                self.filenames.extend(jsonlist)
+
+        assert self.labels.shape[0]==len(self.filenames), f"different size: labels:{self.labels.shape[0]}, filenames:{len(self.filenames)}"
 
         self.cat = {}
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../misc/modelnet_id.txt'), 'r') as f:
@@ -241,6 +248,7 @@ class HDF5_ModelNetDataset(data.Dataset):
     def __getitem__(self, index):
         data = self.point_cloud_data[index]
         cls = self.labels[index]
+        filename = self.filenames[index]
 
         choice = np.random.choice(data.shape[0], self.npoints, replace=True)
         # shuffle the points of one point cloud
@@ -258,7 +266,7 @@ class HDF5_ModelNetDataset(data.Dataset):
 
         point_set = torch.from_numpy(point_set.astype(np.float32))
         cls = torch.from_numpy(cls.astype(np.int64))
-        return point_set, cls
+        return point_set, cls, filename
 
     def __len__(self):
         return self.point_cloud_data.shape[0]
